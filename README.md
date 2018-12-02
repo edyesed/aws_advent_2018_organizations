@@ -89,7 +89,9 @@ To get the credentials to log in as this user
    You can cut and paste those two values into your CLI to build something like
 
    ```shell
-   (aws_advent_2018_organizations) bash-3.2$ AWS_SECRET_ACCESS_KEY=LOL_NO_I_CHANGED_THESE AWS_ACCESS_KEY_ID=THIS_ONE_TOO aws sts get-caller-identity
+   (aws_advent_2018_organizations) bash-3.2$ AWS_SECRET_ACCESS_KEY=LOL_NO_I_CHANGED_THESE \
+   AWS_ACCESS_KEY_ID=THIS_ONE_TOO \
+   aws sts get-caller-identity
    {
     "UserId": "AIDAJSVCKK2GOXVWBQ2TW",
     "Account": "411181159725",

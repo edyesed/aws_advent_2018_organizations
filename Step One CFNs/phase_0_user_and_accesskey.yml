@@ -1,0 +1,13 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Resources:
+  AdventAdminUser:
+    Type: AWS::IAM::User
+    Properties:
+      Path: "/"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/Administrator
+      UserName: AdventAdminUser
+  AdventAdminAccessKey:
+    Type: AWS::IAM::AccessKey
+    Properties:
+      UserName: !Ref AdventAdminUser

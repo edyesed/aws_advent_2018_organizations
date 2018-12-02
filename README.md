@@ -48,7 +48,46 @@ If you have an existing AWS Account that is not itself the root of an organizati
 
 it should look like this : <<INSERT PIC OF ORGANIZATION Console>>
 
-## Create an admin 
+## Create an admin user 
+We will need to use the `aws` CLI just a bit, because there isn't super amazing cloudformation support to _generate organizational children_. 
+
+This user can be created via cloudformation, however, and that's doable via the console.
+
+1. As your root user, naviagate to `Services` -> `CloudFormation`
+1. `Create Stack`
+1. In the **Choose a Template** section, put the radio button onto `Specify an Amazon S3 URL` 
+1. In that URL place (https://s3-us-west-2.amazonaws.com/awsadvent-2018-organizations/StepOneCFNs/phase_0_user_and_accesskey.yml)[https://s3-us-west-2.amazonaws.com/awsadvent-2018-organizations/StepOneCFNs/phase_0_user_and_accesskey.yml]
+1. `Next`
+1. **Stack Name** `AdventAdmin`
+1. `Next`
+1. Nothing needed here on the Options screen
+1. `Next`
+1. Check the box acknowledging that AWS CloudFormation might create IAM resources with custom names.
+1. `Create`
+1. Wait for the stack to reach a `Create Completed` state <<IMG OF CFn1 COMPLETE>>
+
 
 # Step Two: Create a subordinate account
-The Organizations API has great support via the CLI and the SDKs, but it's not really present in the 
+The Organizations API has great support via the CLI and the SDKs, but it's not really present in CloudFormation. We're going to use the `aws` cli to interact with the AWS Organizations APIs.  If you don't already have it, [here is the guide to installing the aws cli](https://docs.aws.amazon.com/cli/latest/userguide/installing.html). 
+
+We created an IAM User in Step One that has full Administrator privilege. For this guide, I'm going to assume that's the user that you'll be using. 
+
+To get the credentials to log in as this user
+1. `Console`
+1. `CloudFormation`
+1. `Stacks`
+1. `AdventAdmin`
+1. `Outputs`
+   You can cut and paste those two values into your CLI to build something like
+
+   ```shell
+   (aws_advent_2018_organizations) bash-3.2$ AWS_SECRET_ACCESS_KEY=LOL_NO_I_CHANGED_THESE AWS_ACCESS_KEY_ID=THIS_ONE_TOO aws sts get-caller-identity
+{
+    "UserId": "AIDAJSVCKK2GOXVWBQ2TW",
+    "Account": "411181159725",
+    "Arn": "arn:aws:iam::411181159725:user/AdventAdminUser"
+}
+(aws_advent_2018_organizations) bash-3.2$
+   ```
+
+You can 

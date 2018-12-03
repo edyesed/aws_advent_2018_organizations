@@ -217,7 +217,7 @@ We're going to first make a Service Control Policy for our entire organzation th
     --content '{"Version": "2012-10-17", "Statement": [{"Effect": "Deny", "Action": ["config:DeleteConfigRule","config:DeleteConfigurationRecorder","config:DeleteDeliveryChannel","config:StopConfigurationRecorder"], "Resource":["*"]}]}'
     ```
 
-## Enable SCPs for your organization
+## Enable SCPs for your organization and attach them
 At this point, we have **An Organization** and **some SCPs**, but they aren't attached to one another. 
 
 Our organization does not yet have any structure, and it is not in a state where the SCPs that we created can be attached anywhere.

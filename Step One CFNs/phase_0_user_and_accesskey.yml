@@ -5,9 +5,16 @@ Resources:
     Properties:
       Path: "/"
       ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/Administrator
+        - arn:aws:iam::aws:policy/AdministratorAccess
       UserName: AdventAdminUser
   AdventAdminAccessKey:
     Type: AWS::IAM::AccessKey
     Properties:
       UserName: !Ref AdventAdminUser
+Outputs:
+  AccessKey:
+    Description: Cut and paste this access key into your shell
+    Value: !Join ["=", [ "AWS_ACCESS_KEY_ID", !Ref AdventAdminAccessKey ]]
+  SecretKey:
+    Description: Cut and paste this access key into your shell
+    Value: !Join ["=", [ "AWS_SECRET_ACCESS_KEY", !GetAtt AdventAdminAccessKey.SecretAccessKey ]]

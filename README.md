@@ -91,10 +91,12 @@ To get the credentials to use the cli as this user
 1. `Outputs`
    You can cut and paste those two values into your CLI to build something like
 
-   ```shell
-   (aws_advent_2018_organizations) bash-3.2$ AWS_SECRET_ACCESS_KEY=LOL_NO_I_CHANGED_THESE \
-   AWS_ACCESS_KEY_ID=THIS_ONE_TOO \
-   aws sts get-caller-identity
+    ```shell
+    (aws_advent_2018_organizations) bash-3.2$ AWS_SECRET_ACCESS_KEY=LOL_NO_I_CHANGED_THESE \
+    AWS_ACCESS_KEY_ID=THIS_ONE_TOO \
+    aws sts get-caller-identity
+    ```
+    ```json
    {
     "UserId": "AIDAJSVCKK2GOXVWBQ2TW",
     "Account": "411181159725",
@@ -113,6 +115,8 @@ We're going to first make a Service Control Policy for our entire organzation th
     (aws_advent_2018_organizations) bash-3.2$ AWS_SECRET_ACCESS_KEY=LOL_NO_I_CHANGED_THESE \
     AWS_ACCESS_KEY_ID=THIS_ONE_TOO \
     aws organizations describe-organization
+    ```
+    ```json
     {
         "Organization": {
             "Id": "o-8a8xjmie9h",
@@ -132,10 +136,12 @@ We're going to first make a Service Control Policy for our entire organzation th
     ```
 
 2. Check your existing SCPs. Amazon created one for you when you built your organization. It says **"All Accounts in this organization can use all services"**. Check it with this command:
-    ```shell-session
+    ```shell
     (aws_advent_2018_organizations) bash-3.2$ AWS_SECRET_ACCESS_KEY=LOL_NO_I_CHANGED_THESE \
     AWS_ACCESS_KEY_ID=THIS_ONE_TOO \
     aws organizations list-policies --filter SERVICE_CONTROL_POLICY
+    ```
+    ```json
     {
         "Policies": [
             {
@@ -166,7 +172,8 @@ We're going to first make a Service Control Policy for our entire organzation th
     (aws_advent_2018_organizations) bash-3.2$ AWS_SECRET_ACCESS_KEY=LOL_NO_I_CHANGED_THESE \
     AWS_ACCESS_KEY_ID=THIS_ONE_TOO \
     aws organizations list-policies --filter SERVICE_CONTROL_POLICY
-
+    ```
+    ```json
     {    "Policies": [
             {
                 "Id": "p-FullAWSAccess",
@@ -216,5 +223,218 @@ At this point, we have **An Organization** and **some SCPs**, but they aren't at
 Our organization does not yet have any structure, and it is not in a state where the SCPs that we created can be attached anywhere.
 
 SCPs have to be explicitly enabled for your Organization. Let us go ahead and do that. 
+1. First, we're going to go ahead run a command that will be disabled via SCP later.
+    ```shell
+    (aws_advent_2018_organizations) bash-3.2$ AWS_SECRET_ACCESS_KEY=LOL_NO_I_CHANGED_THESE \
+    AWS_ACCESS_KEY_ID=THIS_ONE_TOO \
+    aws cloudhsmv2 describe-clusters
+    ```
+    ```json
+    {
+        "Clusters": []
+    }
+    ```
+1. Now, we need to gather the organizational Root id in order to enable SCPs
+    ```shell
+    (aws_advent_2018_organizations) bash-3.2$ AWS_SECRET_ACCESS_KEY=LOL_NO_I_CHANGED_THESE \
+    AWS_ACCESS_KEY_ID=THIS_ONE_TOO \
+    aws organizations list-roots
+    ```
+    ```json
+    {
+        "Roots": [
+            {
+                "Id": "r-8a0p",
+                "Arn": "arn:aws:organizations::411181159725:root/o-8a8xjmie9h/r-8a0p",
+                "Name": "Root",
+                "PolicyTypes": []
+            }
+        ]
+    }
+    ```
+2. We will now enable SCPs in our Organization's Root. Take the Id in the output above
+    ```shell
+    (aws_advent_2018_organizations) bash-3.2$ AWS_SECRET_ACCESS_KEY=LOL_NO_I_CHANGED_THESE \
+    AWS_ACCESS_KEY_ID=THIS_ONE_TOO \
+    aws organizations enable-policy-type --root-id r-8a0p \
+      --policy-type SERVICE_CONTROL_POLICY
+    ```
+    ```json
+    {
+        "Root": {
+            "Id": "r-8a0p",
+            "Arn": "arn:aws:organizations::411181159725:root/o-8a8xjmie9h/r-8a0p",
+            "Name": "Root",
+            "PolicyTypes": []
+        }
+    }
+    ```
+    **DO NOT PANIC BECAUSE POLICYTYPES IS EMPTY**
+2. List the roots of the organization again, and (hopefully) notice that SCPs are enabled
+    ```shell
+    (aws_advent_2018_organizations) bash-3.2$ AWS_SECRET_ACCESS_KEY=LOL_NO_I_CHANGED_THESE \
+    AWS_ACCESS_KEY_ID=THIS_ONE_TOO \
+    aws organizations list-roots
+    ```
+    ```json
+    {
+        "Roots": [
+            {
+                "Id": "r-8a0p",
+                "Arn": "arn:aws:organizations::411181159725:root/o-8a8xjmie9h/r-8a0p",
+                "Name": "Root",
+                "PolicyTypes": [
+                    {
+                        "Type": "SERVICE_CONTROL_POLICY",
+                        "Status": "ENABLED"
+                    }
+                ]
+            }
+        ]
+    }
+    ```
+2. List out the SCP Policies. You'll need these Ids in the coming commands
+    ```shell
+    (aws_advent_2018_organizations) bash-3.2$ AWS_SECRET_ACCESS_KEY=LOL_NO_I_CHANGED_THESE \
+    AWS_ACCESS_KEY_ID=THIS_ONE_TOO \
+    aws organizations list-policies \
+      --filter SERVICE_CONTROL_POLICY
+    ```
+    ```json
+    {
+        "Policies": [
+            {
+                "Id": "p-FullAWSAccess",
+                "Arn": "arn:aws:organizations::aws:policy/service_control_policy/p-FullAWSAccess",
+                "Name": "FullAWSAccess",
+                "Description": "Allows access to every operation",
+                "Type": "SERVICE_CONTROL_POLICY",
+                "AwsManaged": true
+            },
+            {
+                "Id": "p-2v72m3ps",
+                "Arn": "arn:aws:organizations::411181159725:policy/o-8a8xjmie9h/service_control_policy/p-2v72m3ps",
+                "Name": "Keep Config enabled",
+                "Description": "Keep Config enabled",
+                "Type": "SERVICE_CONTROL_POLICY",
+                "AwsManaged": false
+            },
+            {
+                "Id": "p-2pnf8e6y",
+                "Arn": "arn:aws:organizations::411181159725:policy/o-8a8xjmie9h/service_control_policy/p-2pnf8e6y",
+                "Name": "Deny cloudhsm:*",
+                "Description": "Disables cloudhsm",
+                "Type": "SERVICE_CONTROL_POLICY",
+                "AwsManaged": false
+            },
+            {
+                "Id": "p-7i3y6l3k",
+                "Arn": "arn:aws:organizations::411181159725:policy/o-8a8xjmie9h/service_control_policy/p-7i3y6l3k",
+                "Name": "Keep CloudTrail enabled",
+                "Description": "Keep CloudTrail enabled",
+                "Type": "SERVICE_CONTROL_POLICY",
+                "AwsManaged": false
+            }
+        ]
+    }
+    ```
+2. Attach the **Deny cloudhsm:\*** SCP to the root. Doing this will trickle through the whole organization.
+    ```shell
+    (aws_advent_2018_organizations) bash-3.2$ AWS_SECRET_ACCESS_KEY=LOL_NO_I_CHANGED_THESE \
+    AWS_ACCESS_KEY_ID=THIS_ONE_TOO \
+    aws organizations attach-policy \
+      --policy-id p-2pnf8e6y \
+      --target-id r-8a0p
+    ```
+    ```json
+    ```
+2. Attach the **Keep CloudTrail Enabled** SCP to the root. Doing this will trickle through the whole organization.
+    ```shell
+    (aws_advent_2018_organizations) bash-3.2$ AWS_SECRET_ACCESS_KEY=LOL_NO_I_CHANGED_THESE \
+    AWS_ACCESS_KEY_ID=THIS_ONE_TOO \
+    aws organizations attach-policy \
+      --policy-id p-7i3y6l3k \
+      --target-id r-8a0p
+    ```
+    ```json
+    ```
+2. Attach the **Keep Config enabled** SCP to the root. Doing this will trickle through the whole organization.
+    ```shell
+    (aws_advent_2018_organizations) bash-3.2$ AWS_SECRET_ACCESS_KEY=LOL_NO_I_CHANGED_THESE \
+    AWS_ACCESS_KEY_ID=THIS_ONE_TOO \
+    aws organizations attach-policy \
+      --policy-id p-2v72m3ps \
+      --target-id r-8a0p
+    ```
+    ```json
+    ```
+2. Show which policies are actually attached to our root object.
+    ```shell
+    (aws_advent_2018_organizations) bash-3.2$ AWS_SECRET_ACCESS_KEY=LOL_NO_I_CHANGED_THESE \
+    AWS_ACCESS_KEY_ID=THIS_ONE_TOO \
+    aws organizations list-policies-for-target \
+      --filter SERVICE_CONTROL_POLICY \
+      --target-id r-8a0p
+    ```
+    ```json
+    {
+        "Policies": [
+            {
+                "Id": "p-FullAWSAccess",
+                "Arn": "arn:aws:organizations::aws:policy/service_control_policy/p-FullAWSAccess",
+                "Name": "FullAWSAccess",
+                "Description": "Allows access to every operation",
+                "Type": "SERVICE_CONTROL_POLICY",
+                "AwsManaged": true
+            },
+            {
+                "Id": "p-7i3y6l3k",
+                "Arn": "arn:aws:organizations::411181159725:policy/o-8a8xjmie9h/service_control_policy/p-7i3y6l3k",
+                "Name": "Keep CloudTrail enabled",
+                "Description": "Keep CloudTrail enabled",
+                "Type": "SERVICE_CONTROL_POLICY",
+                "AwsManaged": false
+            },
+            {
+                "Id": "p-2v72m3ps",
+                "Arn": "arn:aws:organizations::411181159725:policy/o-8a8xjmie9h/service_control_policy/p-2v72m3ps",
+                "Name": "Keep Config enabled",
+                "Description": "Keep Config enabled",
+                "Type": "SERVICE_CONTROL_POLICY",
+                "AwsManaged": false
+            },
+            {
+                "Id": "p-2pnf8e6y",
+                "Arn": "arn:aws:organizations::411181159725:policy/o-8a8xjmie9h/service_control_policy/p-2pnf8e6y",
+                "Name": "Deny cloudhsm:*",
+                "Description": "Disables cloudhsm",
+                "Type": "SERVICE_CONTROL_POLICY",
+                "AwsManaged": false
+            }
+        ] 
+    }
+    ```
+
+
+
+#XXX CAN THIS BE DELETED?
+2. Create an OU that contains the Root account
+    ```shell
+    (aws_advent_2018_organizations) bash-3.2$ AWS_SECRET_ACCESS_KEY=LOL_NO_I_CHANGED_THESE \
+    AWS_ACCESS_KEY_ID=THIS_ONE_TOO \
+    aws organizations create-organizational-unit \
+      --name RootOU \
+      --parent-id r-8a0p 
+    ```
+    ```json
+    {
+        "OrganizationalUnit": {
+            "Id": "ou-8a0p-t935xjod",
+            "Arn": "arn:aws:organizations::411181159725:ou/o-8a8xjmie9h/ou-8a0p-t935xjod",
+            "Name": "RootOU"
+        }
+    }
+    ```
+
 
 << IMAGE OF AWS ORGS CONSOLE AT THIS POINT>>

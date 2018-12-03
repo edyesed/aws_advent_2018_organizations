@@ -414,27 +414,3 @@ SCPs have to be explicitly enabled for your Organization. Let us go ahead and do
         ] 
     }
     ```
-
-
-
-#XXX CAN THIS BE DELETED?
-2. Create an OU that contains the Root account
-    ```shell
-    (aws_advent_2018_organizations) bash-3.2$ AWS_SECRET_ACCESS_KEY=LOL_NO_I_CHANGED_THESE \
-    AWS_ACCESS_KEY_ID=THIS_ONE_TOO \
-    aws organizations create-organizational-unit \
-      --name RootOU \
-      --parent-id r-8a0p 
-    ```
-    ```json
-    {
-        "OrganizationalUnit": {
-            "Id": "ou-8a0p-t935xjod",
-            "Arn": "arn:aws:organizations::411181159725:ou/o-8a8xjmie9h/ou-8a0p-t935xjod",
-            "Name": "RootOU"
-        }
-    }
-    ```
-
-
-<< IMAGE OF AWS ORGS CONSOLE AT THIS POINT>>

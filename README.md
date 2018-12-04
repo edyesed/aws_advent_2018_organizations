@@ -27,7 +27,9 @@ In this article, we're going to:
 * **Create a new account** that will be the root of our organization
 * Create a SCP that declares **cloudhsm should not be used**
 * Create a SCP that declares **cloudtrail:StopLogging cannot be called**
-* Attach those SCPs into our new organization.
+* Attach those SCPs into our new Organization.
+* Create an OU inside the Organization
+* Bring another account into that OU
 
 ## The Policy Layout
 As you move out from the root and to the first layer of subordinate accounts ( children of the root account ), one policy may apply. Say this policy is "You can run anything except HSM". 

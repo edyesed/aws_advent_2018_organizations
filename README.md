@@ -15,8 +15,9 @@ Some policies may end up being domain specific. PCI-DSS doesn't apply to non-fin
 AWS Organizations brings you technical controls for declaring, enforcing, and ( when paired with AWS Config ) reporting on compliance directives.
 
 # Step Zero: Get your plan together. 
-<<<IMG>>>
+![Austin Powers allow myself to introduce myself, overlaid with text replacing myself with organization](https://media.giphy.com/media/1xoGHBLhVFww9EfPTB/giphy.gif "Allow my organization to organize our organization")
 For many organizations having their ... AWS Organization ...  setup as a tree structure is a great option. 
+
 
 ## The Organizational Concept
 At the root of the tree, you have a single account ( the same aws account from which we will begin working ). This single account runs _no code_. This account is **exclusively** for payment and policy management. 

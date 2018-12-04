@@ -32,10 +32,12 @@ As you move out from the root and to the first layer of subordinate accounts ( c
 
 One of those child accounts may have its own children who process credit card payments and are subject to PCI-DSS. These grandchildren accounts may be restricted to using an explicit whitelist of services. They may be required to use 2FA when logging in. Maybe they can't use S3, because srsbzns can't happen via S3? 
 
-## But what about my existing accounts?
-At my day job, we've been using AWS Payer accounts long before before there were Organizations, and let me tell you... (a) organizations is a big improvement (b) it is totally possible to bring existing accounts into Organizations. However, this write-up isn't going to get into detail on the mechanics of that.  
+## But what about existing accounts
+You can invite accounts into your organziation via one of two ways:
+1. You invite by AWS Account ID
+2. You invite by email, which uses the AWS Console's root user login's email address.
 
-If you follow this guide, you'll be able to bring your existing accounts into Organizations. You'll have the necessary understanding to integrate existing accounts into Organizations, logically group the accounts, and apply policies(SCPs) to those accounts. 
+I'm going to assume you've already got at least one AWS Account, if not, create one and invite it via email. If you do already have an account, find its account id. 
 
 ## The Organizational Layout
 The image below illustrates the organizational structure that we're going to be creating as a part of this writeup. [Service Control Policies](https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_scp.html) ( called SCPs hereafter ) will be used to enforce our policies. If you follow the link to the SCPs page, you'll notice a few important caveats to how SCPs work. 
@@ -529,7 +531,100 @@ CloudFormation does not yet support organizational CloudTrails.  TO THE CLI!
     }
     ```
 
-# Step Four: Finally Build Out Some Organization
 Ok, you've done a lot so far. And you're going to be happy that you laid out all this prep work once you have to start answering questions like "Who in X account built out as many EC2s as their account would allow?" 
 
 Or, "Did Frank from Accounting actually delete the RDS Database in their AWS Account?"
+
+# Step Four: Finally Build Out Some Organization
+Let's get to the purpose that you're here.. Building out some Organizations!
+<<IMG ORG LAYOUT>>
+
+## Make An Organizational Unit ( OU ) for developers
+You work in a progressive organization that wants individual developers to have their own AWS Accounts, huzzah! 
+
+We're going to build an OU to stuff our developer accounts in, and then we'll invite some developers into our org
+
+1. Gather the existing organization's root. Since we don't yet have any OUs, all things are rooted from the root. 
+    ```shell
+    (aws_advent_2018_organizations) bash-3.2$ AWS_SECRET_ACCESS_KEY=LOL_NO_I_CHANGED_THESE \
+    AWS_ACCESS_KEY_ID=THIS_ONE_TOO \
+    aws organizations list-roots | grep '"Id"'
+    ```
+    ```json
+        "Id": "r-8a0p",
+    ```
+1. Now let's create a subordinate OU
+    ```shell
+    (aws_advent_2018_organizations) bash-3.2$ AWS_SECRET_ACCESS_KEY=LOL_NO_I_CHANGED_THESE \
+    AWS_ACCESS_KEY_ID=THIS_ONE_TOO \
+    aws organizations \
+      create-organizational-unit \
+      --parent-id r-8a0p \
+      --name "Developer Accounts"
+    ```
+    ```json
+    {
+        "OrganizationalUnit": {
+            "Id": "ou-8a0p-ejmtbyhz",
+            "Arn": "arn:aws:organizations::411181159725:ou/o-8a8xjmie9h/ou-8a0p-ejmtbyhz",
+            "Name": "Developer Accounts"
+        }
+    }
+    ```
+
+1. Invite an email address
+    ```shell
+    (aws_advent_2018_organizations) bash-3.2$ AWS_SECRET_ACCESS_KEY=LOL_NO_I_CHANGED_THESE \
+    AWS_ACCESS_KEY_ID=THIS_ONE_TOO \
+    aws organizations \
+      invite-account-to-organization \
+      --target Type=EMAIL,Id=youremail+devaccount1@whatever.com
+    ```
+    ```json
+    {
+        "Handshake": {
+            ...
+        }
+    }
+    ```
+1. Or invite an account id
+    ```shell
+    (aws_advent_2018_organizations) bash-3.2$ AWS_SECRET_ACCESS_KEY=LOL_NO_I_CHANGED_THESE \
+    AWS_ACCESS_KEY_ID=THIS_ONE_TOO \
+    aws organizations \
+      invite-account-to-organization \
+      --target Type=ACCOUNT,Id=488887740717
+    ```
+    ```json
+    {
+        "Handshake": {
+            ...
+        }
+    }
+ 
+1. Now go sign in as that account that you just invited. Accept the invitation.
+<<SCREENCAP ORGANIZATIONS AS SUBORDINATE>>
+
+
+1. At this point, our newly invited account needs to be moved to our developers OU. When the account joins our organization, it's parented by the *root* of the org. 
+    ```shell
+    (aws_advent_2018_organizations) bash-3.2$ AWS_SECRET_ACCESS_KEY=LOL_NO_I_CHANGED_THESE \
+    AWS_ACCESS_KEY_ID=THIS_ONE_TOO \
+    aws organizations move-account \
+      --account-id 488887740717 \
+      --source-parent-id r-8a0p \
+      --destination-parent-id ou-8a0p-ejmtbyhz
+    ```
+    ```json
+    ```
+Deep Breath, We've done it
+
+1. Check your permissions. I have some credentials stashed away in ~/.aws/credentials for this account (488887740717). When I try and run `aws cloudhsmv2 describe-clusters`, I will now expect to get a AccessDeniedExeption.
+
+    ```shell
+    (aws_advent_2018_organizations) bash-3.2$ AWS_PROFILE=edyesed_ebooks \
+    aws cloudhsmv2 describe-clusters
+    ```
+    ```json
+    An error occurred (AccessDeniedException) when calling the DescribeClusters operation: User: arn:aws:iam::488887740717:user/ed_temp is not authorized to perform: cloudhsm:DescribeClusters with an explicit deny
+    ```

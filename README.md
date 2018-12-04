@@ -414,3 +414,117 @@ SCPs have to be explicitly enabled for your Organization. Let us go ahead and do
         ] 
     }
     ```
+1. Ok, **Now let's see what we've disabled***
+    ```shell
+    (aws_advent_2018_organizations) bash-3.2$ AWS_SECRET_ACCESS_KEY=LOL_NO_I_CHANGED_THESE \
+    AWS_ACCESS_KEY_ID=THIS_ONE_TOO \
+    aws cloudhsmv2 describe-clusters
+    ```
+    ```json
+    {
+        "Clusters": []
+    }
+    ```
+    BUT, BUT, we just disabled that!! WHAT?!
+
+    **SCPs don't impact the root of your organization**. The Aristocrats!
+    <<IMG THE ARISTOCRATS>>
+
+    Presumably, this means that if you have an admin/root user in the root of your organization, you can recover. maybe.  with the help of support. 
+
+# Step Three: Build out an Organization CloudTrail
+Now that we've laid the groundwork, let's build out this amazing organization that we're so excited to try out! 
+
+## Make a S3 bucket to drop the CloudTrail logs into
+We're now ready to create a S3 bucket into which we'll stash our CloudTrail Logs for our entire organization, automatically, as the org grows or shrinks. 
+
+Pretty cool, right? 
+Before we can create the S3 bucket that we're gonna drop our cloudtrails into, we need to get the organization's OrgId
+
+1.  Use the CLI to grab your OrgId
+    ```shell
+    (aws_advent_2018_organizations) bash-3.2$ AWS_SECRET_ACCESS_KEY=LOL_NO_I_CHANGED_THESE \
+    AWS_ACCESS_KEY_ID=THIS_ONE_TOO \
+    aws organizations describe-organization  | grep '"Id"'
+    ```
+    ```json
+        "Id": "o-8a8xjmie9h",
+    ```
+Now move over to add the CloudFormation Stack that is going to build out the S3 bucket
+with the right bucket policy for our org to log cloudtrail data into it. 
+
+1. As your root user, naviagate to `Services` -> `CloudFormation`
+1. `Create Stack`
+1. In the **Choose a Template** section, put the radio button onto `Specify an Amazon S3 URL` 
+1. In that URL place [https://s3-us-west-2.amazonaws.com/awsadvent-2018-organizations/StepThreeCFNs/phase_3_s3_bucket.yml](https://s3-us-west-2.amazonaws.com/awsadvent-2018-organizations/StepThreeCFNs/phase_3_s3_bucket.yml)
+1. `Next`
+1. **Stack Name** `CloudTrailS3Bucket`
+1. **OrgId** `your-org-id-from-the-cli-command-above`
+1. `Next`
+1. Nothing needed here on the Options screen
+1. `Next`
+1. Check the box acknowledging that AWS CloudFormation might create IAM resources with custom names.
+1. `Create`
+1. Wait for the stack to reach a `Create Completed` state <<IMG OF CFn1 COMPLETE>>
+
+
+## Create a **Organizational** CloudTrail
+Normally, I'd have dropped the CloudTrail creation into CloudFormation, because I'm not a monster... **BUT...** If you aren't already aware, you can consider this my heads up to you that new features frequently get CLI/API support well before they manifest in CloudFormation.
+
+CloudFormation does not yet support organizational CloudTrails.  TO THE CLI!
+
+1.  Gather the S3 bucket name that we created earlier.
+    ```shell
+    (aws_advent_2018_organizations) bash-3.2$ AWS_SECRET_ACCESS_KEY=LOL_NO_I_CHANGED_THESE \
+    AWS_ACCESS_KEY_ID=THIS_ONE_TOO \
+    aws cloudformation describe-stack-resources --stack-name CloudTrailS3Bucket | \
+      grep Physical | \
+      grep s3bucket
+    ```
+    ```json
+                "PhysicalResourceId": "cloudtrails3bucket-s3bucket-78is3f3s2eqj",
+    ```
+2. Now we have to enable all organizational features
+    ```shell
+    (aws_advent_2018_organizations) bash-3.2$ AWS_SECRET_ACCESS_KEY=LOL_NO_I_CHANGED_THESE \
+    AWS_ACCESS_KEY_ID=THIS_ONE_TOO \
+    aws organizations enable-all-features
+    ```
+    ```json
+    An error occurred (HandshakeConstraintViolationException) when calling the EnableAllFeatures operation: All features are already enabled on this organization.
+    ```
+    Even though this is an error, it's the one that we want. Features are enabled 👍👍
+
+2. Now we have to enable service access for cloudtrail. SCPs don't impact service access.
+
+    ```shell
+    (aws_advent_2018_organizations) bash-3.2$ AWS_SECRET_ACCESS_KEY=LOL_NO_I_CHANGED_THESE \
+    AWS_ACCESS_KEY_ID=THIS_ONE_TOO \
+    aws organizations enable-aws-service-access \
+      --service-principal cloudtrail.amazonaws.com
+    ```
+    ```json
+    ```
+
+2. Finally, we create the actual trail
+
+    ```shell
+    (aws_advent_2018_organizations) bash-3.2$ AWS_SECRET_ACCESS_KEY=LOL_NO_I_CHANGED_THESE \
+    AWS_ACCESS_KEY_ID=THIS_ONE_TOO \
+    aws cloudtrail create-trail \
+      --name org-trail \
+      --s3-bucket-name cloudtrails3bucket-s3bucket-78is3f3s2eqj \
+      --is-organization-trail \
+      --is-multi-region-trail
+    ```
+    ```json
+    {
+        "Name": "org-trail",
+        "S3BucketName": "cloudtrails3bucket-s3bucket-78is3f3s2eqj",
+        "IncludeGlobalServiceEvents": true,
+        "IsMultiRegionTrail": true,
+        "TrailARN": "arn:aws:cloudtrail:us-west-2:411181159725:trail/org-trail",
+        "LogFileValidationEnabled": false,
+        "IsOrganizationTrail": true
+    }
+    ```

@@ -1,0 +1,55 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Parameters:
+  OrgId:
+    Type: String
+    Description: This organization's orgid
+    AllowedPattern: "^o-.*$"
+Resources: 
+  S3Bucket: 
+    DeletionPolicy: Retain
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+  BucketPolicy: 
+    Type: AWS::S3::BucketPolicy
+    Properties: 
+      Bucket: 
+        Ref: S3Bucket
+      PolicyDocument: 
+        Version: "2012-10-17"
+        Statement: 
+          - 
+            Sid: "AWSCloudTrailAclCheck"
+            Effect: "Allow"
+            Principal: 
+              Service: "cloudtrail.amazonaws.com"
+            Action: "s3:GetBucketAcl"
+            Resource: 
+              !Sub |-
+                arn:aws:s3:::${S3Bucket}
+          - 
+            Sid: "AWSCloudTrailWrite"
+            Effect: "Allow"
+            Principal: 
+              Service: "cloudtrail.amazonaws.com"
+            Action: "s3:PutObject"
+            Resource:
+              !Sub |-
+                arn:aws:s3:::${S3Bucket}/AWSLogs/${AWS::AccountId}/*
+            Condition:
+              StringEquals:
+                s3:x-amz-acl: "bucket-owner-full-control"
+          - 
+            Sid: "AWSCloudTrailWriteForOrg"
+            Effect: "Allow"
+            Principal: 
+              Service: "cloudtrail.amazonaws.com"
+            Action: "s3:PutObject"
+            Resource:
+              !Join [ "", ["arn:aws:s3:::", !Ref S3Bucket, "/AWSLogs/" , !Ref OrgId , "/*"  ] ]
+            Condition:
+              StringEquals:
+                s3:x-amz-acl: "bucket-owner-full-control"

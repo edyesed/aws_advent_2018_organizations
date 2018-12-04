@@ -528,3 +528,8 @@ CloudFormation does not yet support organizational CloudTrails.  TO THE CLI!
         "IsOrganizationTrail": true
     }
     ```
+
+# Step Four: Finally Build Out Some Organization
+Ok, you've done a lot so far. And you're going to be happy that you laid out all this prep work once you have to start answering questions like "Who in X account built out as many EC2s as their account would allow?" 
+
+Or, "Did Frank from Accounting actually delete the RDS Database in their AWS Account?"

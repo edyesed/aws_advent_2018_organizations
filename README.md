@@ -16,6 +16,7 @@ AWS Organizations brings you technical controls for declaring, enforcing, and ( 
 
 # Step Zero: Get your plan together. 
 ![Austin Powers allow myself to introduce myself, overlaid with text replacing myself with organization](https://media.giphy.com/media/1xoGHBLhVFww9EfPTB/giphy.gif "Allow my organization to organize our organization")
+
 For many organizations having their ... AWS Organization ...  setup as a tree structure is a great option. 
 
 

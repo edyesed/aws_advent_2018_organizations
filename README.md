@@ -430,9 +430,9 @@ SCPs have to be explicitly enabled for your Organization. Let us go ahead and do
     BUT, BUT, we just disabled that!! WHAT?!
 
     **SCPs don't impact the root of your organization**. The Aristocrats!
-    <<IMG THE ARISTOCRATS>>
+    ![Gilbert Gotfried delivering the punchline "The Aristcats!"](https://media.giphy.com/media/69lVlY63AMhoDsvhhu/giphy.gif "The Aristocats!")
 
-    Presumably, this means that if you have an admin/root user in the root of your organization, you can recover. maybe.  with the help of support. 
+    Presumably, this means that if you have an admin/root user in the root of your organization, you can recover. maybe.  with the help of support.  ( don't try this for funsies, folks! )
 
 # Step Three: Build out an Organization CloudTrail
 Now that we've laid the groundwork, let's build out this amazing organization that we're so excited to try out! 

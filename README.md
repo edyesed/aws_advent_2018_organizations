@@ -25,7 +25,7 @@ At the root of the tree, you have a single account ( the same aws account from w
 
 In this article, we're going to:
 * **Create a new account** that will be the root of our organization
-* Create a SCP that declares **cloudhsm should not be used**
+* Create a Service Control Policy ( aka SCP ) that declares **cloudhsm should not be used**
 * Create a SCP that declares **cloudtrail:StopLogging cannot be called**
 * Attach those SCPs into our new Organization.
 * Create an OU inside the Organization
@@ -50,20 +50,26 @@ In short
 2. SCPs don't apply to Service Linked Accounts
 3. SCPs only apply to Principles **inside your organization**, 
 4. if you disable the SCP policy type in a root you can expect to spend the next several days re-enabling it with much tender loving care. 
-<<<images/Amazing_Organization.png>>>
+
+![a directed graph of the organization layout](./images/Amazing_Organization.png)
 
 
 # Step One: Prep your soon-to-be-root account
 AWS Requires you to verify your email address before you can begin ~~summoning~~ creating subordinate accounts. Choose an account that will be your new root account, and verify the email address on it by logging into the AWS Console, and visiting [https://console.aws.amazon.com/organizations/home](https://console.aws.amazon.com/organizations/home)
 
 ## Build a fresh account to be the new root account
-If you have an existing AWS Account that is not itself the root of an organization, you may want to create a new account for this purpose. This writeup's screencaps will continue with a fresh account that's the new designated root
+If you have an existing AWS Account that is not itself the root of an organization, you may want to create a new account for this purpose. This writeup's screencaps will continue with a fresh account that will be our designated root
 
-<<FreshAccount_IMG1>>
-<<FreshAccount_IMG2>>
-<<FreshAccount_IMG3>>
+The organizations console default page
 
-it should look like this : <<INSERT PIC OF ORGANIZATION Console>>
+![AWS Organizations Console for a fresh account, default page](./images/FreshAccount_Img1.png)
+
+The organizations console accounts tab, showing the **You must verify your email to use AWS Accounts** dialogue.
+![AWS Organizations Console for a fresh account, Accounts tab](./images/FreshAccount_Img2.png)
+
+The organizations console accounts tab, after verifying the email address.
+![AWS Organizations Console for a fresh account, Accounts tab](./images/FreshAccount_Img3.png)
+
 
 ## Create an admin user 
 We will need to use the `aws` CLI just a bit, because there isn't super amazing cloudformation support to _generate organizational children_. 
@@ -81,7 +87,8 @@ This user can be created via cloudformation, however, and that's doable via the 
 1. `Next`
 1. Check the box acknowledging that AWS CloudFormation might create IAM resources with custom names.
 1. `Create`
-1. Wait for the stack to reach a `Create Completed` state <<IMG OF CFn1 COMPLETE>>
+1. Wait for the stack to reach a `Create Completed` state.
+![CloudFormation Console showing the stack in a complete state](./images/CFN1_Complete.png)
 
 
 # Step Two: Create Some SCPs
@@ -95,6 +102,10 @@ To get the credentials to use the cli as this user
 1. `Stacks`
 1. `AdventAdmin`
 1. `Outputs`
+    The outputs are in a strange place on the CloudFormation Stack
+    ![CloudFormation Console showing the stack's outputs](./images/CFN1_Outputs.png)
+
+
    You can cut and paste those two values into your CLI to build something like
 
     ```shell
@@ -112,7 +123,7 @@ To get the credentials to use the cli as this user
    ```
 
 ## Make your first SCP
-We're going to first make a Service Control Policy for our entire organzation that states **"No one anywhere can run [CloudHSM](https://aws.amazon.com/cloudhsm/)"**. CloudHSM was chosen for this example because it tends to not be used, and it's relatively expensive. There's nothing wrong with CloudHSM! **If your business needs CloudHSM, these SCPs should be considered for demonstration purposes only.**
+We're going to first make a Service Control Policy for our entire organzation that states **"No one anywhere can run [CloudHSM](https://aws.amazon.com/cloudhsm/)"**. CloudHSM was chosen for this example because it tends to not be used, and it's relatively expensive. There's nothing wrong with CloudHSM! **If your business needs CloudHSM, use it! These SCPs should be considered for demonstration purposes only.**
 
 
 1. Check to be sure that your organization is functional:
@@ -471,7 +482,8 @@ with the right bucket policy for our org to log cloudtrail data into it.
 1. `Next`
 1. Check the box acknowledging that AWS CloudFormation might create IAM resources with custom names.
 1. `Create`
-1. Wait for the stack to reach a `Create Completed` state <<IMG OF CFn1 COMPLETE>>
+1. Wait for the stack to reach a `Create Completed` state 
+!["Image of the s3 bucket's stack reaching a complete state"](./images/CFN3_Complete.png)
 
 
 ## Create a **Organizational** CloudTrail
@@ -541,7 +553,8 @@ Or, "Did Frank from Accounting actually delete the RDS Database in their AWS Acc
 
 # Step Four: Finally Build Out Some Organization
 Let's get to the purpose that you're here.. Building out some Organizations!
-<<IMG ORG LAYOUT>>
+
+![a directed graph of the organization layout with SCPs](./images/Orgs_with_SCPs.png)
 
 ## Make An Organizational Unit ( OU ) for developers
 You work in a progressive organization that wants individual developers to have their own AWS Accounts, huzzah! 
@@ -607,7 +620,8 @@ We're going to build an OU to stuff our developer accounts in, and then we'll in
     }
  
 1. Now go sign in as that account that you just invited. Accept the invitation.
-<<SCREENCAP ORGANIZATIONS AS SUBORDINATE>>
+    This is what the AWS Organizations console should look like. We have one OU named _Developer Accounts_. 
+    ![Orgs Console organization view](./images/Orgs_console_with_OU.png)
 
 
 1. At this point, our newly invited account needs to be moved to our developers OU. When the account joins our organization, it's parented by the *root* of the org. 
@@ -621,7 +635,7 @@ We're going to build an OU to stuff our developer accounts in, and then we'll in
     ```
     ```json
     ```
-Deep Breath, We've done it
+# Deep Breath, We've done it! 🎉🎊
 
 1. Check your permissions. I have some credentials stashed away in ~/.aws/credentials for this account (488887740717). When I try and run `aws cloudhsmv2 describe-clusters`, I will now expect to get a AccessDeniedExeption.
 
@@ -632,3 +646,7 @@ Deep Breath, We've done it
     ```json
     An error occurred (AccessDeniedException) when calling the DescribeClusters operation: User: arn:aws:iam::488887740717:user/ed_temp is not authorized to perform: cloudhsm:DescribeClusters with an explicit deny
     ```
+
+1. Here's a final look at the Organizations console with our account placed in the OU.
+    At this point, we can craft additional SCPs or what have you at the OU level, and those SCPs would only apply to the Accounts in the OU.
+    ![Orgs Console organization view](./images/Orgs_console_in_OU.png)

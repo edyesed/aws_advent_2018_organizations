@@ -1,4 +1,4 @@
-# AWS ADVENT 2018 - I GOTS TO GETS ORGANIZIZED 
+# AWS ADVENT 2018 - I GOTS TO GET ORGANIZIZED 
 ![Travis Bickle Clapping](https://media.giphy.com/media/ulAzlijlNnKggJFDLl/giphy.gif "I GOTS TO GET ORGANIZIZED")
 
 AWS Organizations are an amazing way to do a few existentially important things:
